@@ -1,6 +1,9 @@
 #include "honing.hpp"
 #include <algorithm>
 #include <numeric>
+#include <stack>
+// #include <iostream>
+// #include <chrono> 
 
 #define DBL_MAX 1.79769313486231570815e+308
 #define EPSILON 1e-9
@@ -97,16 +100,89 @@ HoneCalculation::HoneCalculation(
         bestBuff = max(bestBuff, buffComboBoost[z[i]]);
     }
     // cout << efficient_count << " pareto efficient out of " << buffCombo.size() << endl;
+
+    this->dfs();
 }
 
+// DFS
+void HoneCalculation::dfs() {
+    // auto timer_start = std::chrono::high_resolution_clock::now();
 
-double HoneCalculation::getSuccessProb(HoneState s, const double boostPercentage) {
+    this->f = unordered_map<HoneState, HoneStateNodeValue, HoneState_hash_fn>();
+    // unordered_map<HoneState, HoneStateNodeValue, HoneState_hash_fn> f;
+
+    stack<HoneState> s;
+    HoneState start = HoneState{ 0, 0 };
+    s.push(start);
+
+    while (!s.empty()) {
+        const auto x = s.top();
+        HoneStateNodeValue* fx = &this->f[x];
+        switch (fx->dfs_state) {
+            case 1:
+                {
+                s.pop();
+                    int best_index = -1;
+                    double best_score = DBL_MAX;
+
+                    // for y in A(x)
+                    for (int i = 0; i < this->buffCombo.size(); i++) {
+                        const double boostCost = this->buffComboCost[i];
+                        const double boostAmm = this->buffComboBoost[i];
+                        const double prob = getSuccessProb(x, boostAmm);
+                        const HoneState y = nextStateOnFail(x, boostAmm);
+
+                        const double extra_fail_cost = f[y].minAvgCost;
+                        const double score = goldCostBase + boostCost + (prob / 100) * 0 + (100 - prob) / 100 * extra_fail_cost;
+                        if (score < best_score) {
+                            best_score = score;
+                            best_index = i;
+                        }
+                    }
+
+                    fx->minAvgCost = best_score;
+                    fx->buffComboUse = best_index;
+                    fx->dfs_state = 2;
+                    break;
+                }
+            case 0:
+                // s.artisans_energy_percent >= 100
+                if (getSuccessProb(x, 0) >= 100) {
+                    s.pop();
+                    fx->minAvgCost = goldCostBase;
+                    fx->buffComboUse = 0;
+                    fx->dfs_state = 2;
+                    continue;
+                }
+                else {
+                    fx->dfs_state = 1; // change state to 1 but leave on stack
+
+                    // for y in A(x)
+                    for (const double& boost : this->buffComboBoost) {
+                        s.push(nextStateOnFail(x, boost));
+                    }
+                }
+                break;
+            default:
+                s.pop();
+                break;
+        }
+    }
+    // auto finish = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elapsed = finish - timer_start;
+    // std::cout << "new: " << 1000 * elapsed.count() << "ms\n";
+
+    // const auto fx = f[start];
+    // cout << fx.minAvgCost << endl;
+}
+
+double HoneCalculation::getSuccessProb(const HoneState s, const double boostPercentage) const {
     if (s.artisans_energy_percent >= 100) return 100;
     return min(percentageBase + min(percentageFailBonus * s.failed_attempts, percentageFailBonusMax) + boostPercentage, 100.0);
 }
 
 
-HoneState HoneCalculation::nextStateOnFail(HoneState s, const double boostPercentage) {
+HoneState HoneCalculation::nextStateOnFail(HoneState s, const double boostPercentage) const {
     s.failed_attempts++;
     s.artisans_energy_percent += getSuccessProb(s, boostPercentage) * 0.465;
     // to reduce number of states, round down to 3dp
@@ -116,41 +192,15 @@ HoneState HoneCalculation::nextStateOnFail(HoneState s, const double boostPercen
 
 
 CalculationOutput HoneCalculation::calcMinAvgCost(HoneState s) {
-    if (m.count(s)) return m[s];
-    //cout << "f(" << s.failed_attempts << ", " << s.artisans_energy_percent << ")" << endl;
-    CalculationOutput ret = calcMinAvgCostInner(s);
-    m[s] = ret;
-    //cout << "f(" << s.failed_attempts << ", " << s.artisans_energy_percent << ") = \t" << ret << endl;
-    return ret;
+    if (f.count(s)) {
+        return CalculationOutput{ f[s].minAvgCost, buffCombo[f[s].buffComboUse] };
+    }
+    else {
+        // unknown
+        return CalculationOutput{ -1, {} };
+    }
 }
 
-CalculationOutput HoneCalculation::calcMinAvgCostInner(const HoneState s) {
-    if (getSuccessProb(s, 0) >= 100)
-        return CalculationOutput{ goldCostBase, vector<int>(buffs.size(), 0) };
-
-    int best_index = -1;
-    double best_score = DBL_MAX;
-
-    for(int i = 0; i < buffCombo.size(); i++) {
-        double boostCost = buffComboCost[i];
-        double boostAmm = buffComboBoost[i];
-        double prob = getSuccessProb(s, boostAmm);
-
-        // expected extra cost if fail
-        HoneState t = nextStateOnFail(s, boostAmm);
-        double extra_fail_cost = calcMinAvgCost(t).minAvgCost;
-        // expected extra cost if succeed = 0
-
-        double score = goldCostBase + boostCost + (prob / 100) * 0 + (100 - prob) / 100 * extra_fail_cost;
-        if (score < best_score) {
-            best_score = score;
-            best_index = i;
-        }
-        //for (int i = 0; i < buffs.size(); i++)
-        //    cout << z[i] << " ";
-        //cout << "\t(" << t.failed_attempts << "," << t.artisans_energy_percent << ") " << score << endl;
-    };
-
-    // cout << "At (" << s.failed_attempts << "," << s.artisans_energy_percent << "), you should go (" << best_i << "," << best_j << "," << best_k << ") for score " << best_ans << endl;
-    return CalculationOutput{ best_score, buffCombo[best_index] };
+int HoneCalculation::getNumStates() {
+    return f.size();
 }

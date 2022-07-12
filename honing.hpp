@@ -12,6 +12,12 @@ struct CalculationOutput {
 	std::vector<int> buffUses;
 };
 
+struct HoneStateNodeValue {
+	double minAvgCost;
+	int buffComboUse;
+	int dfs_state;
+};
+
 struct HoneState {
 	int failed_attempts;
 	double artisans_energy_percent;
@@ -42,11 +48,13 @@ public:
 		const double percentageBuffMax,
 		const std::vector<HoningBuff> buffs);
 	CalculationOutput calcMinAvgCost(const HoneState s);
-	double getSuccessProb(const HoneState s, const double boostPercentage);
-	HoneState nextStateOnFail(const HoneState s, const double boostPercentage);
+	double getSuccessProb(const HoneState s, const double boostPercentage) const;
+	HoneState nextStateOnFail(const HoneState s, const double boostPercentage) const;
 
 	double getBoostPercentage(const std::vector<int>& buffUses);
 	double getBoostCost(const std::vector<int>& buffUses);
+
+	int getNumStates();
 private:
 	const double percentageBase;
 	const double goldCostBase;
@@ -59,6 +67,7 @@ private:
 	std::vector<double> buffComboBoost;
 	std::vector<double> buffComboCost;
 
-	std::unordered_map<HoneState, CalculationOutput, HoneState_hash_fn> m;
-	CalculationOutput calcMinAvgCostInner(const HoneState s);
+	void dfs();
+
+	std::unordered_map<HoneState, HoneStateNodeValue, HoneState_hash_fn> f;
 };
