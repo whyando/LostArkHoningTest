@@ -4,7 +4,7 @@
 #include <numeric>
 
 #define DBL_MAX 1.79769313486231570815e+308
-#define EPSILON 1e-5
+#define EPSILON 1e-9
 
 using namespace std;
 
