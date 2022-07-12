@@ -30,12 +30,13 @@ int main()
 
     for (int t = 1; t <= 100; t++) {
         CalculationOutput out = calc.calcMinAvgCost(s);
+        double buffAmount = calc.getBoostPercentage(out.buffUses);
         cout << "At (" << s.failed_attempts << "," << s.artisans_energy_percent << "), you should go (" << out.buffUses[0] << "," << out.buffUses[1] << "," << out.buffUses[2] << ") "
-            << calc.getSuccessProb(s, out.buffUses) << "% "
+            << calc.getSuccessProb(s, buffAmount) << "% "
             << "for score " << out.minAvgCost << endl;
         
         if (s.artisans_energy_percent >= 100) break;
-        s = calc.nextStateOnFail(s, out.buffUses);
+        s = calc.nextStateOnFail(s, buffAmount);
     }
     //HoneCalculation calc = HoneCalculation(
     //    3,

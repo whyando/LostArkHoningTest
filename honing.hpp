@@ -42,8 +42,11 @@ public:
 		const double percentageBuffMax,
 		const std::vector<HoningBuff> buffs);
 	CalculationOutput calcMinAvgCost(const HoneState s);
-	double getSuccessProb(const HoneState s, const std::vector<int> &buffUses);
-	HoneState nextStateOnFail(const HoneState s, const std::vector<int> &buffUses);
+	double getSuccessProb(const HoneState s, const double boostPercentage);
+	HoneState nextStateOnFail(const HoneState s, const double boostPercentage);
+
+	double getBoostPercentage(const std::vector<int>& buffUses);
+	double getBoostCost(const std::vector<int>& buffUses);
 private:
 	const double percentageBase;
 	const double goldCostBase;
@@ -52,8 +55,10 @@ private:
 	const double percentageBuffMax;
 	std::vector<HoningBuff> buffs;
 
-	double getBoostPercentage(const std::vector<int> &buffUses);
-	double getBoostCost(const std::vector<int>& buffUses);
+	std::vector<std::vector<int>> buffCombo;
+	std::vector<double> buffComboBoost;
+	std::vector<double> buffComboCost;
+
 	std::unordered_map<HoneState, CalculationOutput, HoneState_hash_fn> m;
 	CalculationOutput calcMinAvgCostInner(const HoneState s);
 };
