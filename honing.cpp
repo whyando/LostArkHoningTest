@@ -1,6 +1,5 @@
 #include "honing.hpp"
 #include <algorithm>
-#include <iostream> // @@
 #include <numeric>
 
 #define DBL_MAX 1.79769313486231570815e+308
@@ -97,7 +96,7 @@ HoneCalculation::HoneCalculation(
         }
         bestBuff = max(bestBuff, buffComboBoost[z[i]]);
     }
-    cout << efficient_count << " pareto efficient out of " << buffCombo.size() << endl;
+    // cout << efficient_count << " pareto efficient out of " << buffCombo.size() << endl;
 }
 
 
