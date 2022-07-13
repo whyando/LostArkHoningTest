@@ -13,30 +13,29 @@ using namespace std;
 
 int main()
 {
-    //HoneCalculation calc = HoneCalculation(
-    //    0.5,
-    //    6028.2,
-    //    0.05,
-    //    0.5,
-    //    1,
-    //    {
-    //        HoningBuff{ 0.01, 33, 48 },
-    //        HoningBuff{ 0.02, 73, 24 },
-    //        HoningBuff{ 0.04, 185, 8 },
-    //    },
-    //    true);
+    auto timer_start = std::chrono::high_resolution_clock::now();
     HoneCalculation calc = HoneCalculation(
         0.5,
-        3222.8,
+        6028.2,
         0.05,
         0.5,
         1,
         {
-            HoningBuff{ 0.01, 22, 48 },
-            HoningBuff{ 0.02, 65, 24 },
-            HoningBuff{ 0.04, 118, 8 },
-        },
-        true);
+            HoningBuff{ 0.01, 33, 48 },
+            HoningBuff{ 0.02, 73, 24 },
+            HoningBuff{ 0.04, 185, 8 },
+        });
+    //HoneCalculation calc = HoneCalculation(
+    //    0.5,
+    //    3222.8,
+    //    0.05,
+    //    0.5,
+    //    1,
+    //    {
+    //        HoningBuff{ 0.01, 22, 48 },
+    //        HoningBuff{ 0.02, 65, 24 },
+    //        HoningBuff{ 0.04, 118, 8 },
+    //    });
     //HoneCalculation calc = HoneCalculation(
     //    30,
     //    2367,
@@ -49,6 +48,9 @@ int main()
     //        HoningBuff{ 5, 185, 2 },
     //        HoningBuff{ 10, 379, 1 },
     //    });
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - timer_start;
+    std::cout << "new: " << 1000 * elapsed.count() << "ms\n";
 
     HoneState s{ 0, 0.0 };
     // HoneState s{ 4, 78.0 };
