@@ -13,29 +13,30 @@ using namespace std;
 
 int main()
 {
-    HoneCalculation calc = HoneCalculation(
-        0.5,
-        6028.2,
-        0.05,
-        0.5,
-        1,
-        {
-            HoningBuff{ 0.01, 33, 48 },
-            HoningBuff{ 0.02, 73, 24 },
-            HoningBuff{ 0.04, 185, 8 },
-        },
-        false);
     //HoneCalculation calc = HoneCalculation(
     //    0.5,
-    //    3222.8,
+    //    6028.2,
     //    0.05,
     //    0.5,
     //    1,
     //    {
-    //        HoningBuff{ 0.01, 22, 48 },
-    //        HoningBuff{ 0.02, 65, 24 },
-    //        HoningBuff{ 0.04, 118, 8 },
-    //    });
+    //        HoningBuff{ 0.01, 33, 48 },
+    //        HoningBuff{ 0.02, 73, 24 },
+    //        HoningBuff{ 0.04, 185, 8 },
+    //    },
+    //    true);
+    HoneCalculation calc = HoneCalculation(
+        0.5,
+        3222.8,
+        0.05,
+        0.5,
+        1,
+        {
+            HoningBuff{ 0.01, 22, 48 },
+            HoningBuff{ 0.02, 65, 24 },
+            HoningBuff{ 0.04, 118, 8 },
+        },
+        true);
     //HoneCalculation calc = HoneCalculation(
     //    30,
     //    2367,

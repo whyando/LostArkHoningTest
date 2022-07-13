@@ -214,8 +214,8 @@ double HoneCalculation::getSuccessProb(const HoneState s, const double boostPerc
 HoneState HoneCalculation::nextStateOnFail(HoneState s, const double boostPercentage) const {
     s.failed_attempts++;
     s.artisans_energy_percent += getSuccessProb(s, boostPercentage);
-    // to reduce number of states, round down to 3dp
-    s.artisans_energy_percent = floor(100 * s.artisans_energy_percent) / 100;
+    // round to avoid fp summation comparison issues
+    s.artisans_energy_percent = round(1000000 * s.artisans_energy_percent) / 1000000;
     return s;
 }
 
