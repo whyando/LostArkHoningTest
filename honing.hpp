@@ -46,13 +46,15 @@ public:
 		const double percentageFailBonus,
 		const double percentageFailBonusMax,
 		const double percentageBuffMax,
-		const std::vector<HoningBuff> buffs);
+		const std::vector<HoningBuff> buffs,
+		bool precise);
 	CalculationOutput calcMinAvgCost(const HoneState s);
 	double getSuccessProb(const HoneState s, const double boostPercentage) const;
 	HoneState nextStateOnFail(const HoneState s, const double boostPercentage) const;
 
 	double getBoostPercentage(const std::vector<int>& buffUses);
 	double getBoostCost(const std::vector<int>& buffUses);
+	double getBuffComboWeight(const std::vector<int>& buffUses);
 
 	int getNumStates();
 private:
@@ -62,10 +64,12 @@ private:
 	const double percentageFailBonusMax;
 	const double percentageBuffMax;
 	std::vector<HoningBuff> buffs;
+	bool precise;
 
 	std::vector<std::vector<int>> buffCombo;
 	std::vector<double> buffComboBoost;
 	std::vector<double> buffComboCost;
+	std::vector<double> buffComboWeight;
 
 	void dfs();
 

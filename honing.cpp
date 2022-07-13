@@ -37,23 +37,35 @@ double HoneCalculation::getBoostCost(const vector<int>& buffUses) {
     return cost;
 }
 
+double HoneCalculation::getBuffComboWeight(const vector<int>& buffUses) {
+    double weight = 0;
+    for (int i = 0; i < buffs.size(); i++) {
+        weight += 1000 * (buffUses[i] == 0 || buffUses[i] == buffs[i].maxUses);
+        weight -= buffUses[i];
+    }
+    return weight;
+}
+
 HoneCalculation::HoneCalculation(
     const double percentageBase,
     const double goldCostBase,
     const double percentageFailBonus,
     const double percentageFailBonusMax,
     const double percentageBuffMax,
-    std::vector<HoningBuff> buffs
+    std::vector<HoningBuff> buffs,
+    bool precise
 ) : percentageBase(percentageBase),
     goldCostBase(goldCostBase),
-    buffs(buffs),
     percentageFailBonus(percentageFailBonus),
     percentageFailBonusMax(percentageFailBonusMax),
-    percentageBuffMax(percentageBuffMax)
+    percentageBuffMax(percentageBuffMax),
+    buffs(buffs),
+    precise(precise)
 {
     this->buffCombo = {};
     this->buffComboCost = {};
     this->buffComboBoost = {};
+    this->buffComboWeight = {};
 
     vector<vector<int>> buffCombo;
     vector<double> buffComboCost;
@@ -96,6 +108,7 @@ HoneCalculation::HoneCalculation(
             this->buffCombo.push_back(buffCombo[z[i]]);
             this->buffComboBoost.push_back(buffComboBoost[z[i]]);
             this->buffComboCost.push_back(buffComboCost[z[i]]);
+            this->buffComboWeight.push_back(getBuffComboWeight(buffCombo[z[i]]));
         }
         bestBuff = max(bestBuff, buffComboBoost[z[i]]);
     }
@@ -124,6 +137,9 @@ void HoneCalculation::dfs() {
                 s.pop();
                     int best_index = -1;
                     double best_score = DBL_MAX;
+                    double base = 0;
+
+                    vector<double> score(this->buffCombo.size());
 
                     // for y in A(x)
                     for (int i = 0; i < this->buffCombo.size(); i++) {
@@ -133,15 +149,28 @@ void HoneCalculation::dfs() {
                         const HoneState y = nextStateOnFail(x, boostAmm);
 
                         const double extra_fail_cost = f[y].minAvgCost;
-                        const double score = goldCostBase + boostCost + (prob / 100) * 0 + (100 - prob) / 100 * extra_fail_cost;
-                        if (score < best_score) {
-                            best_score = score;
+                        score[i] = goldCostBase + boostCost + (prob / 100) * 0 + (100 - prob) / 100 * extra_fail_cost;
+                        if ((score[i] < best_score) || (score[i] == best_score && this->buffComboWeight[i] > this->buffComboWeight[best_index])) {
+                            best_score = score[i];
                             best_index = i;
+                            base = f[y].minAvgCost;
                         }
                     }
 
-                    fx->minAvgCost = best_score;
-                    fx->buffComboUse = best_index;
+                    int best_index_1 = best_index;
+                    double best_score_1 = best_score;
+
+                    if (!precise && base != 0) {
+                        for (int i = 0; i < this->buffCombo.size(); i++) {
+                            if (((score[i]-base) <= (best_score-base)*1.15) && (best_index_1 == -1 || this->buffComboWeight[i] > this->buffComboWeight[best_index_1])) {
+                                best_score_1 = score[i];
+                                best_index_1 = i;
+                            }
+                        }
+                    }
+
+                    fx->minAvgCost = best_score_1;
+                    fx->buffComboUse = best_index_1;
                     fx->dfs_state = 2;
                     break;
                 }
@@ -177,14 +206,14 @@ void HoneCalculation::dfs() {
 }
 
 double HoneCalculation::getSuccessProb(const HoneState s, const double boostPercentage) const {
-    if (s.artisans_energy_percent >= 100) return 100;
+    if (s.artisans_energy_percent >= 215) return 100;
     return min(percentageBase + min(percentageFailBonus * s.failed_attempts, percentageFailBonusMax) + boostPercentage, 100.0);
 }
 
 
 HoneState HoneCalculation::nextStateOnFail(HoneState s, const double boostPercentage) const {
     s.failed_attempts++;
-    s.artisans_energy_percent += getSuccessProb(s, boostPercentage) * 0.465;
+    s.artisans_energy_percent += getSuccessProb(s, boostPercentage);
     // to reduce number of states, round down to 3dp
     s.artisans_energy_percent = floor(100 * s.artisans_energy_percent) / 100;
     return s;
