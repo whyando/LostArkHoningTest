@@ -49,8 +49,10 @@ HoneCalculation::HoneCalculation(
     percentageFailBonus(percentageFailBonus),
     percentageFailBonusMax(percentageFailBonusMax),
     percentageBuffMax(percentageBuffMax),
-    buffs(buffs)
+    buffs(buffs),
+    maxFailStacks(percentageFailBonusMax / percentageFailBonus)
 {
+
     this->buffCombo = {};
     this->buffComboCost = {};
     this->buffComboBoost = {};
@@ -101,18 +103,13 @@ HoneCalculation::HoneCalculation(
     }
     cout << efficient_count << " pareto efficient out of " << buffCombo.size() << endl;
 
-    this->dfs();
+    this->f = unordered_map<HoneState, HoneStateNodeValue, HoneState_hash_fn>();
 }
 
+
 // DFS
-void HoneCalculation::dfs() {
-    // auto timer_start = std::chrono::high_resolution_clock::now();
-
-    this->f = unordered_map<HoneState, HoneStateNodeValue, HoneState_hash_fn>();
-    // unordered_map<HoneState, HoneStateNodeValue, HoneState_hash_fn> f;
-
+void HoneCalculation::dfs(HoneState start) {
     stack<HoneState> s;
-    HoneState start = HoneState{ 0, 0 };
     s.push(start);
 
     while (!s.empty()) {
@@ -146,7 +143,6 @@ void HoneCalculation::dfs() {
                     break;
                 }
             case 0:
-                // s.artisans_energy_percent >= 100
                 if (getSuccessProb(x, 0) >= 100) {
                     s.pop();
                     fx->minAvgCost = goldCostBase;
@@ -168,37 +164,33 @@ void HoneCalculation::dfs() {
                 break;
         }
     }
-    // auto finish = std::chrono::high_resolution_clock::now();
-    // std::chrono::duration<double> elapsed = finish - timer_start;
-    // std::cout << "new: " << 1000 * elapsed.count() << "ms\n";
-
-    // const auto fx = f[start];
-    // cout << fx.minAvgCost << endl;
 }
 
 double HoneCalculation::getSuccessProb(const HoneState s, const double boostPercentage) const {
-    if (s.artisans_energy_percent >= 215) return 100;
-    return min(percentageBase + min(percentageFailBonus * s.failed_attempts, percentageFailBonusMax) + boostPercentage, 100.0);
+    if (s.failed_prob_sum >= 21500) return 100;
+    return min(percentageBase + min(percentageFailBonus * s.fail_stacks, percentageFailBonusMax) + boostPercentage, 100.0);
 }
 
-
-HoneState HoneCalculation::nextStateOnFail(HoneState s, const double boostPercentage) const {
-    s.failed_attempts++;
-    s.artisans_energy_percent += getSuccessProb(s, boostPercentage);
-    // round to avoid fp summation comparison issues
-    s.artisans_energy_percent = round(100 * s.artisans_energy_percent) / 100;
-    return s;
+HoneState HoneCalculation::nextStateOnFail(const HoneState s, const double boostPercentage) const {
+    HoneState t = s;
+    if (t.fail_stacks < maxFailStacks)
+        t.fail_stacks++;
+    t.failed_prob_sum += 100 * getSuccessProb(s, boostPercentage);
+    return t;
 }
-
 
 CalculationOutput HoneCalculation::calcMinAvgCost(HoneState s) {
     if (f.count(s)) {
         return CalculationOutput{ f[s].minAvgCost, buffCombo[f[s].buffComboUse] };
     }
-    else {
-        // unknown
-        return CalculationOutput{ -1, {} };
+    this->dfs(s);
+
+    if (f.count(s)) {
+        return CalculationOutput{ f[s].minAvgCost, buffCombo[f[s].buffComboUse] };
     }
+
+    // unknown
+    return CalculationOutput{ -1, {} };
 }
 
 int HoneCalculation::getNumStates() {

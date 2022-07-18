@@ -14,28 +14,28 @@ using namespace std;
 int main()
 {
     auto timer_start = std::chrono::high_resolution_clock::now();
-    HoneCalculation calc = HoneCalculation(
-        0.5,
-        6028.2,
-        0.05,
-        0.5,
-        1,
-        {
-            HoningBuff{ 0.01, 33, 48 },
-            HoningBuff{ 0.02, 73, 24 },
-            HoningBuff{ 0.04, 185, 8 },
-        });
     //HoneCalculation calc = HoneCalculation(
     //    0.5,
-    //    3222.8,
+    //    6028.2,
     //    0.05,
     //    0.5,
     //    1,
     //    {
-    //        HoningBuff{ 0.01, 22, 48 },
-    //        HoningBuff{ 0.02, 65, 24 },
-    //        HoningBuff{ 0.04, 118, 8 },
+    //        HoningBuff{ 0.01, 33, 48 },
+    //        HoningBuff{ 0.02, 73, 24 },
+    //        HoningBuff{ 0.04, 185, 8 },
     //    });
+    HoneCalculation calc = HoneCalculation(
+        0.5,
+        3514.4,
+        0.05,
+        0.5,
+        1,
+        {
+            HoningBuff{ 0.01, 31, 48 },
+            HoningBuff{ 0.02, 66, 24 },
+            HoningBuff{ 0.04, 122, 8 },
+        });
     //HoneCalculation calc = HoneCalculation(
     //    30,
     //    2367,
@@ -49,8 +49,6 @@ int main()
     //        HoningBuff{ 10, 379, 1 },
     //    });
     auto finish = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = finish - timer_start;
-    std::cout << "new: " << 1000 * elapsed.count() << "ms\n";
 
     HoneState s{ 0, 0.0 };
     // HoneState s{ 4, 78.0 };
@@ -58,7 +56,7 @@ int main()
     for (int t = 1; t <= 1000; t++) {
         CalculationOutput out = calc.calcMinAvgCost(s);
         double buffAmount = calc.getBoostPercentage(out.buffUses);
-        cout << "At (" << s.failed_attempts << "," << s.artisans_energy_percent << "), you should go (" << out.buffUses[0] << "," << out.buffUses[1] << "," << out.buffUses[2] << ") "
+        cout << "At (" << s.fail_stacks << "," << s.failed_prob_sum << "), you should go (" << out.buffUses[0] << "," << out.buffUses[1] << "," << out.buffUses[2] << ") "
             << calc.getSuccessProb(s, buffAmount) << "% "
             << "for score " << out.minAvgCost << endl;
         
@@ -66,4 +64,6 @@ int main()
         s = calc.nextStateOnFail(s, buffAmount);
     }
     cout << "states:" << calc.getNumStates() << endl;
+    std::chrono::duration<double> elapsed = finish - timer_start;
+    std::cout << "duration: " << 1000 * elapsed.count() << "ms\n";
 }

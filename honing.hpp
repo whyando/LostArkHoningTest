@@ -19,12 +19,12 @@ struct HoneStateNodeValue {
 };
 
 struct HoneState {
-	int failed_attempts;
-	double artisans_energy_percent;
+	int32_t fail_stacks;
+	int32_t failed_prob_sum; // ! integer (out of 10000)
 
 	// `operator==` is required to compare keys in case of a hash collision
 	bool operator==(const HoneState& p) const {
-		return failed_attempts == p.failed_attempts && artisans_energy_percent == p.artisans_energy_percent;
+		return fail_stacks == p.fail_stacks && failed_prob_sum == p.failed_prob_sum;
 	}
 };
 // The specialized hash function for `unordered_map` keys
@@ -32,8 +32,8 @@ struct HoneState_hash_fn
 {
 	std::size_t operator() (const HoneState& node) const
 	{
-		std::size_t h1 = std::hash<int>()(node.failed_attempts);
-		std::size_t h2 = std::hash<double>()(node.artisans_energy_percent);
+		std::size_t h1 = std::hash<int>()(node.fail_stacks);
+		std::size_t h2 = std::hash<int>()(node.failed_prob_sum);
 		return h1 ^ h2;
 	}
 };
@@ -63,11 +63,13 @@ private:
 	const double percentageBuffMax;
 	std::vector<HoningBuff> buffs;
 
+	const int maxFailStacks;
+
 	std::vector<std::vector<int>> buffCombo;
 	std::vector<double> buffComboBoost;
 	std::vector<double> buffComboCost;
 
-	void dfs();
+	void dfs(HoneState start);
 
 	std::unordered_map<HoneState, HoneStateNodeValue, HoneState_hash_fn> f;
 };
